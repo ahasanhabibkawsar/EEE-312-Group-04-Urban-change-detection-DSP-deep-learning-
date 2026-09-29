@@ -29,7 +29,7 @@ Removing the Canny channel did not lower F1: on LEVIR-CD the fixed edge channel 
 ## 1. Installation
 
 ```bash
-git clone https://github.com/Ahasan-habib-gif/EEE-312-Group-04-Urban-change-detection-DSP-deep-learning-.git
+git clone https://github.com/ahasanhabibkawsar/EEE-312-Group-04-Urban-change-detection-DSP-deep-learning-.git
 cd EEE-312-Group-04-Urban-change-detection-DSP-deep-learning-
 python3 -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
@@ -41,7 +41,7 @@ Tested with Python 3.10+ and PyTorch 2.x on macOS (Apple MPS). CUDA and CPU also
 
 GitHub does not store large files well, so the trained model is attached to the **Releases** page.
 
-1. Download `best_model.pth` and `best_threshold.json` from [Releases → v2.0](https://github.com/Ahasan-habib-gif/EEE-312-Group-04-Urban-change-detection-DSP-deep-learning-/releases).
+1. Download `best_model.pth` and `best_threshold.json` from [Releases → v2.0](https://github.com/ahasanhabibkawsar/EEE-312-Group-04-Urban-change-detection-DSP-deep-learning-/releases).
 2. Put both files in the `checkpoints/` folder.
 
 ## 3. Dataset (only needed for training / evaluation)
