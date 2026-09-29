@@ -1,123 +1,153 @@
 # Video Script – Group 04, EEE 312 (Section B2)
 
 **Project:** Digital Signal Processing and Deep Learning-Based Urban Change Detection Using Satellite Imagery  
-**Target length:** about 10 minutes (1365 words at a calm 140 words per minute)
-**Estimated speaking time:** 9 min 44 s plus slide changes
+**Length:** 1295 words ≈ 9 min 14 s at 140 words per minute (plus slide changes) – within the 10-minute limit
 
 ## How to record
 
-1. Open `Group04_EEE312_Urban_Change_Detection.pptx`, start Slide Show, and record the screen with QuickTime (File → New Screen Recording) or Zoom.
-2. The same words are in each slide's **speaker notes**, so Presenter View shows them while you record.
-3. Each member records the slides marked with their name (the footer of each slide says who presents it). If one person records everything, read it in order.
-4. On slide 11, switch to the running GUI for 15–20 seconds: load test_102 Before/After/GT, press Run Inference, move the threshold slider, then return to the slides.
-5. Upload to YouTube with the title: **Urban Change Detection with DSP & Deep Learning | B2.04 | EEE 312 (Jan 2026) Project | Dept of EEE, BUET**, then paste the link on slide 20.
+1. Open `Group04_EEE312_Final_Presentation.pptx` → Slide Show → Presenter View. The exact words for every slide are in the speaker notes.
+2. Record the screen with QuickTime (File → New Screen Recording) or Zoom. Each member speaks on the slides whose footer shows their ID.
+3. On slide 16, switch to the running GUI for 15–20 seconds: load test_102 Before / After / Ground truth, press Run Inference, move the threshold slider, then return to the slides.
+4. Upload to YouTube as: **Urban Change Detection with DSP & Deep Learning | B2.04 | EEE 312 (Jan 2026) Project | Dept of EEE, BUET**, then put the link on slide 25.
+
+| Presenter | Slides | Time |
+|---|---|---|
+| Md. Ahasan Habib Kawsar (2206119) | 1, 2, 3, 4, 6, 13, 14, 15 | ≈ 2 min 45 s |
+| Mustasin Rahman (2206104) | 7, 8, 9, 10, 11, 12, 22, 23 | ≈ 2 min 41 s |
+| Fahim Shahriyar (2206114) | 5, 17, 18, 19, 20, 21 | ≈ 2 min 35 s |
+| Md. Kawsar Ahmed (2206122) | 16, 24, 25, 26, 27 | ≈ 1 min 13 s |
 
 ## Slide 1 – Title
-*Fahim Shahriyar (2206114) · about 21 s*
+*Md. Ahasan Habib Kawsar (2206119) · about 21 s*
 
-Assalamu Alaikum. We are Group 04 from Section B2 of EEE 312, Digital Signal Processing One Laboratory. Our project is Digital Signal Processing and Deep Learning-Based Urban Change Detection Using Satellite Imagery. I am Fahim Shahriyar, and my teammates are Mustasin Rahman, Md. Ahasan Habib Kawsar and Md. Kawsar Ahmed.
+Assalamu Alaikum. We are Group 04 from Section B2 of EEE 312, Digital Signal Processing One Laboratory. Our project is Digital Signal Processing and Deep Learning-Based Urban Change Detection Using Satellite Imagery. I am Md. Ahasan Habib Kawsar, and my teammates are Mustasin Rahman, Fahim Shahriyar and Md. Kawsar Ahmed.
 
 ## Slide 2 – Outline
-*Fahim Shahriyar (2206114) · about 13 s*
+*Md. Ahasan Habib Kawsar (2206119) · about 12 s*
 
-We will first summarise the project and the problem, then explain our design, show the working software, evaluate it against the program outcomes, and finish with teamwork, future work and references.
+We will summarise the project, explain the problem and our design, demonstrate the software, evaluate the results against the program outcomes, and finish with teamwork, future work and references.
 
-## Slide 3 – 1. Summary / Abstract
-*Fahim Shahriyar (2206114) · about 36 s*
+## Slide 3 – 1. Abstract
+*Md. Ahasan Habib Kawsar (2206119) · about 31 s*
 
-Our system takes two satellite images of the same place, taken years apart, and marks every pixel where a new building has appeared. A Gaussian filter and the Canny edge detector extract structural edges, which we add to the colour image as a fourth channel. A Siamese neural network with attention then compares the two dates. On 128 unseen test images of the LEVIR-CD dataset, it reaches an F1-score of 91.2 percent and an IoU of 83.8 percent, and it runs in a desktop application.
+Our system takes two satellite images of the same place, taken years apart, and marks every pixel where a building has appeared. A Gaussian filter and the Canny edge detector extract structural edges, which we add to the colour image as a fourth channel, and a Siamese neural network compares the two dates. On 128 unseen LEVIR-CD test images it reaches an F1-score of 91.2 percent and an IoU of 83.8 percent.
 
 ## Slide 4 – 2. Introduction
-*Fahim Shahriyar (2206114) · about 34 s*
+*Md. Ahasan Habib Kawsar (2206119) · about 26 s*
 
-Cities like Dhaka grow faster than manual surveys can map them. Planners need to know where new buildings appear: unauthorised construction, encroachment on wetlands, or damage after a disaster. The task is hard for three reasons: shadows, seasons and sensor colour change the image even when nothing is built; only about 4.6 percent of pixels actually change; and a house is only ten to twenty pixels wide. On the right, an empty field has become a row of warehouses.
+Cities like Dhaka grow faster than manual surveys can map them, so planners need an automatic way to find new construction and post-disaster damage. The task is hard for three reasons: shadows and seasons change the image even when nothing is built; only a small fraction of pixels actually change; and a house is only ten to twenty pixels wide.
 
-## Slide 5 – 3.1 Design: Literature Review
+## Slide 5 – 3.1 Literature Review
 *Fahim Shahriyar (2206114) · about 33 s*
 
-Early methods simply subtracted the two images, which is very sensitive to lighting. Siamese networks pass both images through the same encoder; STANet added attention and published LEVIR-CD, and transformers such as BIT and ChangeFormer pushed F1 above 89 percent. Our aim was a lighter design that trains on a laptop and adds an explicit DSP edge channel. The chart compares our test F1 with published results; our inference settings differ slightly, so it is an indicative comparison.
+Classical methods simply subtract the two images, which is fast but very sensitive to lighting. Siamese networks pass both images through the same encoder, and attention and transformer models such as STANet, BIT and ChangeFormer reach around ninety percent F1. Our approach combines explicit DSP edge features with attention in a lightweight network that trains on a laptop. The chart compares our test F1 with published results; the protocols differ slightly, so it is an indicative comparison.
 
 ## Slide 6 – 3.2 Design Methods (PO(a))
-*Mustasin Rahman (2206104) · about 30 s*
+*Md. Ahasan Habib Kawsar (2206119) · about 14 s*
 
-I am Mustasin Rahman, and I will explain the design. This is the complete pipeline. The before and after images first pass through our DSP front-end, shown in red: grayscale conversion, Gaussian smoothing and Canny edge detection. The edge map is stacked with the colour channels and standardised. The dark blocks are the deep-learning stages: a shared ResNet-34 encoder, attention-based fusion, and a U-Net decoder that produces the change map.
+This is our complete design flow in six steps: data preparation, preprocessing, DSP feature engineering, the Siamese U-Net model, training, and finally evaluation and demonstration. My teammates will now explain each step.
 
-## Slide 7 – 3.2 Design Methods: DSP Front-End
-*Mustasin Rahman (2206104) · about 36 s*
+## Slide 7 – 3.2.1 Data Preparation
+*Mustasin Rahman (2206104) · about 22 s*
 
-Here is each DSP stage on a real image. We convolve the grayscale image with a five-by-five Gaussian kernel, sigma equal to one; this low-pass filter removes noise that would create false edges. Canny then computes Sobel gradients, thins edges by non-maximum suppression, and applies hysteresis thresholds of 50 and 150. Finally, every channel is standardised to zero mean and unit variance. This was critical: in our first version the edge channel was 255 times weaker than the colour channels, so the network ignored it.
+I am Mustasin Rahman. We use the LEVIR-CD dataset: 637 pairs of before and after images, each 1024 by 1024 pixels at half a metre per pixel, with a ground-truth mask that marks every changed pixel. The official split is 445 pairs for training, 64 for validation and 128 for testing.
 
-## Slide 8 – 3.2 Design Methods: Network Architecture
-*Md. Ahasan Habib Kawsar (2206119) · about 35 s*
+## Slide 8 – 3.2.2 Image Preprocessing
+*Mustasin Rahman (2206104) · about 27 s*
 
-I am Md. Ahasan Habib Kawsar, and I will explain the network. Both four-channel images pass through the same pre-trained ResNet-34 encoder, giving features at five scales, and at every scale a fusion block compares the two dates. The decoder rebuilds a full-resolution change map. An edge head predicts the outlines of changed buildings and feeds them into the decoder, which sharpens boundaries. Large images are predicted as overlapping 256-pixel tiles, so the network always works at the original half-metre resolution.
+Instead of shrinking the images, we cut random 256 by 256 crops at full resolution, so small buildings keep their detail. Flips and rotations are applied identically to both dates and the mask, while brightness and colour are changed separately for each date. Every channel is then standardised. At test time, the full image is covered by 25 overlapping tiles that are blended smoothly.
 
-## Slide 9 – 3.2 Design Methods: Attention, Fusion, Loss
-*Md. Ahasan Habib Kawsar (2206119) · about 27 s*
+## Slide 9 – 3.2.3 DSP Feature Engineering
+*Mustasin Rahman (2206104) · about 17 s*
 
-The attention module places both dates side by side, so every pixel can attend to every pixel of both images. The fusion block keeps the before features, the after features and their absolute difference. The loss adds binary cross-entropy, Dice loss for the class imbalance, and a class-balanced edge loss. We evaluate with precision, recall, F1 and IoU over all test pixels.
+Our DSP front-end turns each RGB image into a four-channel input. The image is converted to grayscale, smoothed with a Gaussian filter, and passed through the Canny edge detector; the edge map is then stacked with the original colour channels.
 
-## Slide 10 – 3.3 Design: Training and Inference
-*Md. Ahasan Habib Kawsar (2206119) · about 26 s*
+## Slide 10 – Grayscale Conversion
+*Mustasin Rahman (2206104) · about 15 s*
 
-We train on random 256-pixel crops of the full-resolution images, so small buildings keep their detail. Both dates are flipped and rotated together, while brightness and colour are changed separately, so lighting differences are not learned as change. Training ran on a MacBook GPU; validation F1 reached 0.91 at epoch 32. The threshold, 0.41, was chosen on the validation set only.
+Grayscale conversion uses the ITU-R BT.601 weights: Y equals 0.299 R plus 0.587 G plus 0.114 B. This reduces three colour channels to one intensity map while keeping the geometry of buildings for gradient analysis.
 
-## Slide 11 – 4 Implementation: Demonstration
-*Md. Kawsar Ahmed (2206122) · about 44 s*
+## Slide 11 – Gaussian Filtering
+*Mustasin Rahman (2206104) · about 15 s*
 
-I am Md. Kawsar Ahmed, and I will show the software. This is our PyQt5 desktop application. We load the before image, the after image and, optionally, the ground truth, and press Run Inference. The model runs in a background thread, so the window never freezes. The bottom row shows the change probability, the final mask, and the detected buildings in red on the after image. When I move the threshold slider, the mask and the metrics update instantly. For this test image, F1 is 95.8 percent and IoU is 91.9 percent. Post-processing removes small noise and straightens building outlines into polygons.
+Next, we convolve the grayscale image with a five-by-five Gaussian kernel with sigma equal to one. This low-pass filter removes high-frequency noise, so the gradient operators respond to real structural edges instead of pixel noise.
 
-## Slide 12 – 4.1 Implementation: Results Gallery
-*Md. Kawsar Ahmed (2206122) · about 24 s*
+## Slide 12 – Canny Edge Detection & Fusion
+*Mustasin Rahman (2206104) · about 22 s*
 
-Here are three more test results. From left to right: before, after, ground truth, probability, prediction, and an error map, where white is correct, red is a false alarm and cyan is a miss. The outlines are sharp, and even closely spaced houses in a new housing estate are separated, with F1 between 0.92 and 0.98.
+Canny computes the horizontal and vertical Sobel gradients and their magnitude, thins the edges by non-maximum suppression, and applies hysteresis thresholds of 50 and 150. The binary edge map is appended as a fourth channel, and all four channels are standardised so that the edge channel carries the same weight as colour.
 
-## Slide 13 – 5. Analysis and Evaluation: Test Results
-*Md. Ahasan Habib Kawsar (2206119) · about 25 s*
+## Slide 13 – 3.2.4 Siamese U-Net Architecture
+*Md. Ahasan Habib Kawsar (2206119) · about 20 s*
 
-On all 128 test images, the final model reaches 91.8 percent precision, 90.6 percent recall, 91.2 percent F1 and 83.8 percent IoU; that is 14 F1 points and 21 IoU points above our first version. False alarms and misses are balanced, and the validation threshold is almost exactly the best test threshold, so the result is not over-tuned.
+Both four-channel images pass through the same pre-trained ResNet-34 encoder, which gives features at five scales. At every scale, a fusion block compares the two dates. The U-Net decoder rebuilds a full-resolution change map, guided by an edge head that predicts the outlines of changed buildings.
 
-## Slide 14 – 5.1 Novelty
-*Md. Ahasan Habib Kawsar (2206119) · about 24 s*
+## Slide 14 – 3.2.5 Attention, Fusion, Loss
+*Md. Ahasan Habib Kawsar (2206119) · about 21 s*
 
-Our design is novel in four ways: a standardised DSP edge channel fused with colour inside a pre-trained encoder; attention and difference-based fusion at every scale; an edge-guided decoder supervised with a Sobel operator; and native-resolution deployment in a real-time application. Finding and fixing three silent bugs in our first version added 14 F1 points.
+The attention module places both dates side by side, so every pixel can attend to every pixel of both images. The fusion keeps the before features, the after features and their absolute difference. The loss combines binary cross-entropy, Dice loss for the class imbalance, and a class-balanced edge loss.
 
-## Slide 15 – 5.2 Design Considerations (PO(c))
-*Mustasin Rahman (2206104) · about 36 s*
+## Slide 15 – 3.3 Training and Inference
+*Md. Ahasan Habib Kawsar (2206119) · about 20 s*
 
-For public health and safety, the system can flag unauthorised construction in flood-prone or earthquake-risk areas, and map damage quickly after a disaster. Because a missed building could hide a hazard, the output is decision support, and a human always verifies it. Environmentally, it monitors encroachment on wetlands and farmland without field trips. For society, it can support city planners, and the threshold slider lets users choose between fewer false alarms and fewer misses. It must not be used to target informal settlements.
+We trained with the AdamW optimiser and a cosine learning-rate schedule on a MacBook GPU, at about six minutes per epoch. Validation F1 reached 0.91 at epoch 32, and training stopped automatically at epoch 47. The decision threshold, 0.41, was chosen on the validation set only.
 
-## Slide 16 – 5.3 Investigations (PO(d))
-*Md. Ahasan Habib Kawsar (2206119) · about 26 s*
+## Slide 16 – 4. Implementation: Demonstration
+*Md. Kawsar Ahmed (2206122) · about 27 s*
 
-A controlled test showed that our old attention module changed an image's output by 0.24 depending on the other images in its batch; now the difference is zero. Theory predicts IoU equals F1 over two minus F1, which gives 0.8377; we measured 0.8378. In our worst test image, tiny mobile homes are missed and re-roofed buildings are mistaken for new ones.
+I am Md. Kawsar Ahmed, and this is our PyQt5 desktop application. We load the before and after images and, optionally, the ground truth, and press Run Inference. The model runs in a background thread, so the window never freezes. Moving the threshold slider updates the mask and the metrics instantly. On this test image, F1 is 95.8 percent and IoU is 91.9 percent.
 
-## Slide 17 – 5.4 Limitations of Tools (PO(e))
-*Mustasin Rahman (2206104) · about 30 s*
+## Slide 17 – 4.1 Results on LEVIR-CD
+*Fahim Shahriyar (2206114) · about 19 s*
 
-Our tools have limits. Training on a laptop GPU restricted the batch size to four and took about five hours. LEVIR-CD contains only buildings in American cities at half-metre resolution, so dense Bangladeshi areas are a domain shift. Canny thresholds are fixed, objects smaller than about two metres are unreliable, and badly aligned image pairs cause false alarms. We reduced these effects with native-resolution tiling, test-time augmentation and a validation-selected threshold.
+I am Fahim Shahriyar. Here an empty field has become a new housing estate. The probability map is confident on the new houses and clean on the background, and the error map shows mostly white, meaning correct pixels. F1 on this image is 0.939.
 
-## Slide 18 – 5.5 Ethical Issues (PO(h))
-*Mustasin Rahman (2206104) · about 26 s*
+## Slide 18 – 4.2 Inference on Dhaka Imagery
+*Fahim Shahriyar (2206114) · about 21 s*
 
-On ethics: we used the public LEVIR-CD dataset under its licence and cite every source. High-resolution imagery can reveal private property, so the intended use is planning and disaster response, not surveillance. We never used the test set for tuning, and we report our earlier bugs and failure cases openly. Our use of AI coding assistance is disclosed in the report.
+We also tested real Bangladeshi imagery from Bashundhara. Here the model detects only a few changes near construction sites and misses much of the real change. Dense layouts, high-rise shadows and local building styles are very different from the American suburbs in LEVIR-CD, so local training data is needed.
 
-## Slide 19 – 6.1 Individual Contribution (PO(i))
-*Md. Kawsar Ahmed (2206122) · about 23 s*
+## Slide 19 – 5.1 Quantitative Results
+*Fahim Shahriyar (2206114) · about 27 s*
 
-Each member led one part. Mustasin prepared the data and the DSP pre-processing, Fahim led the literature review and the error analysis, Ahasan designed and trained the network, and I built the GUI and the inference pipeline. We met weekly, shared one code folder, and every module was reviewed by a second member.
+On all 128 test images the final model reaches 91.8 percent precision, 90.6 percent recall, 91.2 percent F1 and 83.8 percent IoU. False alarms and misses are balanced, at about half a percent of pixels each. The right chart shows that F1 rises with the amount of change in an image, from 84 percent for small changes to 92 percent for large developments.
 
-## Slide 20 – 7 Communication to External Stakeholders (PO(j))
-*Md. Kawsar Ahmed (2206122) · about 11 s*
+## Slide 20 – 5.2 Investigations (PO(d))
+*Fahim Shahriyar (2206114) · about 33 s*
 
-Our code, the trained model and a user manual are available on GitHub, and this video is on YouTube. The links are on this slide.
+We ran controlled experiments. Fixing three bugs in our first version raised F1 from 77 to 91 percent, and test-time augmentation added 0.4 points. Our most important finding: when we removed the Canny channel, F1 did not drop — it was 91.6 percent with RGB only. So on this dataset the fixed edge channel gives no measurable gain, because the encoder already learns edge filters itself. The measured IoU also matches the theoretical relation with F1 exactly.
 
-## Slide 21 – 8. Future Work (PO(l))
-*Md. Kawsar Ahmed (2206122) · about 21 s*
+## Slide 21 – 5.3 Limitations & Failure Modes (PO(e))
+*Fahim Shahriyar (2206114) · about 22 s*
 
-First, we will finish the RGB-only comparison to measure exactly how much the edge channel adds. We also want to label image pairs from Dhaka and Purbachal, detect roads and demolition as separate classes, try transformer backbones and longer image time series, and turn the tool into a GIS plug-in.
+The remaining errors have clear causes. Tiny mobile homes, only three to five pixels wide, are missed; re-roofed buildings are mistaken for new ones; and dense Bangladeshi scenes cause a domain shift. Our tools also limited us: a laptop GPU allowed only batch size four, and the Canny thresholds are fixed.
 
-## Slide 22 – 9. References
+## Slide 22 – 5.4 Design Considerations (PO(c))
+*Mustasin Rahman (2206104) · about 21 s*
+
+For public health and safety, the system can flag unauthorised construction in flood-prone or earthquake-risk areas and map damage after a disaster, but a human always verifies the output. It monitors encroachment on wetlands and farmland without field trips, and the threshold slider lets users balance false alarms against misses.
+
+## Slide 23 – 5.5 Ethical Issues (PO(h))
+*Mustasin Rahman (2206104) · about 22 s*
+
+We used the public LEVIR-CD dataset under its licence and cite every source. High-resolution imagery can reveal private property, so the intended use is planning and disaster response, not surveillance or eviction. We never used the test set for tuning, and we report our negative DSP result and failure cases openly.
+
+## Slide 24 – 6. Individual Contribution (PO(i))
+*Md. Kawsar Ahmed (2206122) · about 17 s*
+
+Each member led one part: Mustasin the data and DSP pre-processing, Fahim the literature review and error analysis, Ahasan the network and training, and I built the GUI and inference pipeline. Every module was reviewed by a second member.
+
+## Slide 25 – 7. Communication (PO(j))
+*Md. Kawsar Ahmed (2206122) · about 9 s*
+
+Our code, trained model and user manual are on GitHub, and this video is on YouTube. The links are on this slide.
+
+## Slide 26 – 8. Future Work (PO(l))
+*Md. Kawsar Ahmed (2206122) · about 17 s*
+
+Next, we want to build a labelled dataset of Dhaka image pairs and fine-tune the model on it, learn adaptive edge filters instead of fixed Canny thresholds, classify the type of change, and deploy the tool for large-scale imagery.
+
+## Slide 27 – 9. References
 *Md. Kawsar Ahmed (2206122) · about 3 s*
 
 These are our references. Thank you for watching.
@@ -125,19 +155,25 @@ These are our references. Thank you for watching.
 ## Viva preparation – likely questions
 
 **Q: Does the Canny channel actually improve the result?**  
-A: We made the edge channel equally strong as the colour channels, which the first version did not do. A full RGB-only comparison run was started, but it did not finish before the deadline, so we do not claim a measured gain; that comparison is listed as future work.
+A: No measurable gain on LEVIR-CD: RGB-only reached 91.63 % F1 versus 91.17 % with Canny, under the same protocol. The encoder's first layer, pre-trained on ImageNet, already learns edge detectors, so a fixed Canny map adds little. The DSP stages still matter elsewhere: Gaussian/Canny preprocessing, Sobel-based edge supervision, cosine-window tile blending and morphological post-processing.
+
+**Q: Then why keep the DSP channel?**  
+A: It is the method we designed and tested; reporting the negative ablation is part of an honest investigation (PO(d)). Future work replaces fixed thresholds with learnable edge filters.
 
 **Q: Why F1 and IoU instead of accuracy?**  
-A: Only about 5 percent of pixels change, so a model that predicts 'no change' everywhere would already get about 95 percent accuracy. F1 and IoU measure the changed class.
+A: Only about 5 % of pixels change, so predicting 'no change' everywhere already gives about 95 % accuracy. F1 and IoU measure the changed class.
 
 **Q: Why is IoU lower than F1?**  
-A: For the same counts, IoU = F1 / (2 − F1), so it is always lower; 0.9117 gives 0.8377, which matches our measurement.
+A: For the same counts IoU = F1 / (2 − F1) exactly; F1 = 0.9117 gives 0.8378, identical to our measured IoU.
 
-**Q: How did you choose the threshold 0.41?**  
-A: By sweeping thresholds on the 64 validation images and picking the best F1. The test set was never used for that choice.
+**Q: How was the threshold 0.41 chosen?**  
+A: By sweeping thresholds on the 64 validation images. The test set was never used for any choice.
 
 **Q: Why tiles instead of resizing the 1024 × 1024 image?**  
-A: Resizing to 256 shrinks a 16-pixel house to 4 pixels. Tiles keep the native 0.5 m/pixel detail; overlapping tiles are blended to avoid seams.
+A: Resizing to 256 shrinks a 16-pixel house to 4 pixels. Overlapping 256-px tiles keep the native 0.5 m/pixel detail and are blended with a cosine window to avoid seams.
 
 **Q: What was wrong in version 1?**  
-A: The attention module mixed samples within a batch, the edge channel was 255 times weaker than RGB, and images were down-sampled 4×. Fixing these raised F1 from 0.77 to 0.91.
+A: The attention module mixed samples within a batch, the edge channel was 255 times weaker than RGB, and images were down-sampled 4×. Fixing these raised F1 from 77.1 % to 91.2 %.
+
+**Q: Why does it fail on Dhaka imagery?**  
+A: Domain shift: LEVIR-CD contains low-density US suburbs; Dhaka has dense, high-rise buildings with long shadows. Local labelled data and fine-tuning are needed.

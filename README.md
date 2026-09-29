@@ -16,11 +16,21 @@ Detects new buildings between two satellite images of the same place (before / a
 
 Threshold 0.41 selected on the validation set; sliding-window inference (256-px tiles, 64-px overlap) with 4-view test-time augmentation.
 
+### Ablations (same 128 test images, threshold 0.41)
+
+| Configuration | Input | F1 | IoU | Results folder |
+|---|---|---|---|---|
+| v2 final model, no TTA | RGB + Canny | 90.77 % | 83.10 % | `evaluation_results_no_tta/` |
+| v2 final model + TTA | RGB + Canny | 91.17 % | 83.78 % | `evaluation_results/` |
+| v2 DSP ablation + TTA | RGB only | 91.63 % | 84.56 % | `evaluation_results_rgb_only/` |
+
+Removing the Canny channel did not lower F1: on LEVIR-CD the fixed edge channel gives no measurable gain, because the ImageNet-pre-trained encoder already learns edge filters in its first layer.
+
 ## 1. Installation
 
 ```bash
-git clone https://github.com/<your-account>/<repo-name>.git
-cd <repo-name>
+git clone https://github.com/Ahasan-habib-gif/EEE-312-Group-04-Urban-change-detection-DSP-deep-learning-.git
+cd EEE-312-Group-04-Urban-change-detection-DSP-deep-learning-
 python3 -m venv .venv && source .venv/bin/activate      # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
@@ -31,7 +41,7 @@ Tested with Python 3.10+ and PyTorch 2.x on macOS (Apple MPS). CUDA and CPU also
 
 GitHub does not store large files well, so the trained model is attached to the **Releases** page.
 
-1. Download `best_model.pth` and `best_threshold.json` from *Releases → v2.0*.
+1. Download `best_model.pth` and `best_threshold.json` from [Releases → v2.0](https://github.com/Ahasan-habib-gif/EEE-312-Group-04-Urban-change-detection-DSP-deep-learning-/releases).
 2. Put both files in the `checkpoints/` folder.
 
 ## 3. Dataset (only needed for training / evaluation)
@@ -83,6 +93,7 @@ evaluation/            figures and reports
 gui/app.py             PyQt5 application (app.py is a launcher)
 train.py, evaluate.py, sanity_check.py, test_all_inference.py
 CHANGES_v2.md          list of bugs found in v1 and how they were fixed
+evaluation_results*/   test-set metrics and figures (final model, no-TTA and RGB-only ablations)
 presentation/          slides and video script
 ```
 

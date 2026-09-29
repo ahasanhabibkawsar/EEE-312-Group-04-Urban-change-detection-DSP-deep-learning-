@@ -30,3 +30,12 @@ change_size_analysis/
 threshold_analysis/
 threshold_analysis_results/
 evaluation_report/
+
+# Office lock files
+~$*
+
+# Superseded first draft of the slides
+presentation/Group04_EEE312_Urban_Change_Detection.pptx
+
+# Personal notes (not part of the deliverables)
+presentation/Viva_Prep_*.docx
