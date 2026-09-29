@@ -1,0 +1,86 @@
+QWidget{ 
+	background-color: #444444;
+}
+
+QFrame {
+	background-color: #444444;
+}
+
+QPushButton {
+	color: #FFFFFF;
+	font: bold;
+	min-width: 100px;
+	min-height: 50px;
+	max-width: 100px;
+	max-height: 50px;
+}
+
+QPushButton:hover{
+	background-color: #999999;
+}
+
+QPushButton:pressed{
+	background-color: #000000;
+}
+
+QPushButton:disabled{
+        color: #888888;
+}
+
+QLabel {
+	color: #FFFFFF;
+	font: bold;
+}
+
+QLineEdit {
+	background-color: #444444;
+	color: #FFFFFF;
+	font: bold; 
+	border: solid;
+ 	border-width: 2px;
+	border-color: #FFFFFF;
+}
+
+QLineEdit:focus {
+	border-color: #33CCFF;
+}
+
+QDoubleSpinBox {
+	color: #FFFFFF;
+}
+
+QSpinBox {
+	color: #FFFFFF;
+}
+
+QCheckBox {
+	color: #FFFFFF;
+}
+
+QMenu {
+	color: #FFFFFF;	
+}
+
+QMenu::item {
+	background-color: #444444;
+}
+
+QMenuBar {
+	background-color: #444444;
+}
+
+QGroupBox {
+	color: #FFFFFF;
+}
+
+QDockWidget {
+	color: #FFFFFF;
+}
+
+QComboBox {
+	color: #FFFFFF;
+}
+
+QScrollBar {
+	color: #FFFFFF;
+}

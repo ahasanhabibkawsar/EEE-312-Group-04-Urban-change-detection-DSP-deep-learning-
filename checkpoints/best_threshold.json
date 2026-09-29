@@ -1,0 +1,5 @@
+{
+    "threshold": 0.41,
+    "val_f1": 0.910707854720196,
+    "selected_on": "validation"
+}
