@@ -142,15 +142,6 @@ _v1_baseline/          first prototype (code, history, metrics) kept for compari
 *_analysis.py, loss_ablation.py, threshold_*.py   additional analysis scripts
 ```
 
-## 8. Team contributions
-
-| Member | Main contributions |
-|---|---|
-| Mustasin Rahman (2206104) | Dataset preparation, DSP pre-processing, augmentation, DSP visualisations |
-| Fahim Shahriyar (2206114) | Literature review, results / error / spatial analyses, report writing |
-| Md. Ahasan Habib Kawsar (2206119) | Architecture, training pipeline, v2 debugging and re-training, evaluation and ablations |
-| Md. Kawsar Ahmed (2206122) | PyQt5 GUI, inference and post-processing, presentation, video, GitHub |
-
 ## 9. References
 
 1. H. Chen and Z. Shi, "A spatial-temporal attention-based method and a new dataset for remote sensing image change detection," *Remote Sensing*, 12(10), 1662, 2020.
