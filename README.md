@@ -142,7 +142,7 @@ _v1_baseline/          first prototype (code, history, metrics) kept for compari
 *_analysis.py, loss_ablation.py, threshold_*.py   additional analysis scripts
 ```
 
-## 9. References
+## 8. References
 
 1. H. Chen and Z. Shi, "A spatial-temporal attention-based method and a new dataset for remote sensing image change detection," *Remote Sensing*, 12(10), 1662, 2020.
 2. R. C. Daudt, B. Le Saux, A. Boulch, "Fully convolutional Siamese networks for change detection," ICIP 2018.
