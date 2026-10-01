@@ -43,3 +43,7 @@ presentation/Viva_Prep_*.docx
 # Per-image sample figures for the large datasets (re-create with save_all_samples.py)
 comparison_results/samples_*/
 !comparison_results/samples_purbachal_test/
+
+# Video recordings (uploaded to YouTube; too large for GitHub)
+*.mov
+*.mp4

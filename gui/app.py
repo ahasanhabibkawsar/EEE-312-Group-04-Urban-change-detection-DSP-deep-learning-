@@ -62,6 +62,8 @@ SCALE_OPTIONS = [
 ]
 DEFAULT_METHOD = "v2"
 OVERLAY_OPTIONS = ["Before (T1)", "After (T2)"]
+COMPARE_TITLES = {"v2": "v2\nRGB + Canny, 4-ch", "v2rgb": "v2\nRGB only, 3-ch", "v1": "v1\nold model",
+                  "ens_avg": "Ensemble v1 + v2\naverage", "ens_max": "Ensemble v1 + v2\nunion (max)"}
 
 
 # =========================================================
@@ -536,7 +538,7 @@ class MainWindow(QMainWindow):
                 pred, gt = mask > 0.5, self.gt_mask > 0.5
                 tp = np.logical_and(pred, gt).sum(); fp = np.logical_and(pred, ~gt).sum(); fn = np.logical_and(~pred, gt).sum()
                 sub = f"F1 {2 * tp / max(2 * tp + fp + fn, 1):.3f} · " + sub
-            show(fig.add_subplot(2, n + 2, i + 3), prob, METHODS[method].split(" (")[0].replace("–", "\n"), f"p (t = {t:.2f})",
+            show(fig.add_subplot(2, n + 2, i + 3), prob, COMPARE_TITLES.get(method, method), f"p (t = {t:.2f})",
                  cmap="viridis")
             show(fig.add_subplot(2, n + 2, n + 2 + i + 3), self.make_overlay(mask, base), "overlay", sub)
         fig.tight_layout()
