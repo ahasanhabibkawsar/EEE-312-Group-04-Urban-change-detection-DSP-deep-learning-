@@ -39,3 +39,7 @@ presentation/Group04_EEE312_Urban_Change_Detection.pptx
 
 # Personal notes (not part of the deliverables)
 presentation/Viva_Prep_*.docx
+
+# Per-image sample figures for the large datasets (re-create with save_all_samples.py)
+comparison_results/samples_*/
+!comparison_results/samples_purbachal_test/

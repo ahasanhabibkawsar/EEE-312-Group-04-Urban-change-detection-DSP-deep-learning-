@@ -39,6 +39,25 @@ Confusion counts: TP 6,194,312 · FP 556,557 · FN 643,092 · TN 126,823,767. Pe
 * Test-time augmentation adds +0.40 F1 / +0.68 IoU.
 * **Removing the Canny channel did not lower accuracy.** On LEVIR-CD the fixed-threshold edge map gives no measurable gain, because the ImageNet-pre-trained encoder already learns edge filters in its first layer. We report this negative result openly; learnable DSP filters are listed as future work.
 
+### Old vs new model, 3- vs 4-channel input and ensembles (`compare_models.py`)
+
+Same protocol for every model: full-resolution prediction, threshold chosen per model on LEVIR-CD validation. WHU-CD (Christchurch, 0.3 m/px, 638 labelled tiles) was never used for training.
+
+| Model | Input | LEVIR-CD F1 | LEVIR-CD IoU | WHU-CD F1 | WHU-CD IoU |
+|---|---|---|---|---|---|
+| v1 – old prototype (256 px) | raw RGB + Canny | 78.21 % | 64.21 % | 66.72 % | 50.06 % |
+| **v2 – final** | RGB + Canny (4-ch) | **91.17 %** | **83.78 %** | **82.85 %** | **70.72 %** |
+| v2 – ablation | RGB only (3-ch) | 91.69 % | 84.65 % | 83.09 % | 71.07 % |
+| Ensemble average | v1 + v2 | 89.13 % | 80.39 % | 83.01 % | 70.95 % |
+| Ensemble max (union) | v1 + v2 | 87.18 % | 77.27 % | 76.81 % | 62.35 % |
+
+* The old model generalises worst: on WHU-CD its precision is only 57 % (many false alarms).
+* RGB-only matches the 4-channel model on both datasets.
+* Combining old and new models gives no real gain.
+* **Purbachal, Dhaka (12 pairs, no ground truth):** the old model marks 9.7 % of pixels as changed, RGB-only v2 7.9 %, final v2 1.8 %. Most of these scenes really changed (open plots → dense blocks), so every model under-detects; without labels the models cannot be scored here. Enlarging the input ×2 / ×4 did not help, so the cause is domain shift, not resolution.
+
+Full tables and figures: [`comparison_results/`](comparison_results/). Note: v1 scores 77.12 % when measured at 256 × 256 (table above); 78.21 % is its full-resolution score.
+
 ### Comparison with published methods (F1 on LEVIR-CD, as reported by Bandara & Patel, 2022)
 
 | FC-EF | FC-Siam-diff | STANet | BIT | ChangeFormer | **This work** |
@@ -50,7 +69,7 @@ Our number uses sliding-window inference with TTA, so the comparison is indicati
 ### Known limitations
 
 * Errors concentrate on very small objects (mobile homes 3–5 px wide) and re-roofed buildings (appearance change without new construction).
-* Trained only on US suburbs. On dense Bangladeshi scenes (Bashundhara / Purbachal, Dhaka) the model detects few changes, which is a domain-shift problem that needs local training data.
+* Trained only on US suburbs. On dense Bangladeshi scenes (Purbachal, Dhaka) all models under-detect; this domain shift needs labelled local data and fine-tuning.
 
 ## 1. Installation
 
@@ -69,6 +88,7 @@ The model file (~100 MB) is too large for the repository, so it is attached to t
 
 1. Download `best_model.pth` from [Releases](https://github.com/ahasanhabibkawsar/EEE-312-Group-04-Urban-change-detection-DSP-deep-learning-/releases).
 2. Put it in the `checkpoints/` folder (`checkpoints/best_threshold.json` is already in the repository).
+3. *(Optional, for the model menu / comparison)* also download `best_model_v1.pth` → `_v1_baseline/checkpoints/` and `best_model_rgb_only.pth` → `checkpoints/ablation_rgb_only/best_model.pth`.
 
 ## 3. Dataset (only needed for training / evaluation)
 
@@ -91,9 +111,10 @@ python app.py
 1. **Load Before (T1)** and **Load After (T2)**: any two co-registered RGB images of the same area (PNG / JPG / TIFF).
 2. *(Optional)* **Load Ground Truth**: a binary mask; the metrics panel then shows F1, IoU, precision and recall live.
 3. Options: **Test-time augmentation** (more accurate, ~4× slower), **Post-processing** (removes speckles, straightens outlines into polygons), **Centre crop 512**, **Resolution** (choose the option matching your image's ground resolution; LEVIR-CD is 0.5 m/pixel).
-4. Press **Run Inference**. The window stays responsive while the model runs.
-5. Move the **Threshold** slider to trade false alarms against misses. **Validation Threshold** restores 0.41 and **Auto Threshold (Otsu)** picks one per image.
-6. **Save View** exports a six-panel PNG.
+4. Choose the **Model** (default *v2 – RGB + Canny, final*; also v2 RGB-only, the old v1 model and two ensembles) and **Overlay on** Before (default) or After.
+5. Press **Run Inference**. The window stays responsive while the model runs. **Compare all models** shows every model side by side on the same pair.
+6. Move the **Threshold** slider to trade false alarms against misses. **Validation Threshold** restores 0.41 and **Auto Threshold (Otsu)** picks one per image.
+7. **Save View** exports a six-panel PNG.
 
 ## 5. Command-line use
 
@@ -105,6 +126,8 @@ python app.py
 | RGB-only ablation | `python train.py --no-canny` |
 | Evaluate on the test set | `python evaluate.py --tta` |
 | Per-image results for any folder with A/ and B/ | `python test_all_inference.py --data-dir <folder>` |
+| Compare all models on LEVIR-CD, WHU-CD, Purbachal | `python compare_models.py` (`--quick` for a 10-min run) |
+| One comparison figure per image pair | `python save_all_samples.py --data-dir data/LEVIR-CD_purbachal/test` |
 | DSP stage figures | `python visualization_slide.py data/LEVIR-CD/test/B/test_1.png` |
 
 ## 6. Method summary
@@ -128,12 +151,13 @@ dataset/               LEVIR-CD dataset, random crops, synchronised augmentation
 models/                ResNet-34 Siamese encoder, BAM + Siam-Concat fusion, decoder, edge head
 losses/                BCE + Dice + class-balanced edge loss
 training/              training loop, dataset-level metrics, threshold sweep
-inference/             prediction on arbitrary image pairs, post-processing
+inference/             prediction on arbitrary image pairs, post-processing; multi_model.py (v1, v2, ensembles)
 evaluation/            figures and reports
 gui/app.py             PyQt5 application (app.py is a launcher)
 train.py, evaluate.py, sanity_check.py, test_all_inference.py
 checkpoints/           best_threshold.json, training history (model file: see Releases)
 evaluation_results*/   test-set metrics and figures (final model, no-TTA and RGB-only ablations)
+comparison_results/    old vs new model, 3- vs 4-channel and ensemble comparison (compare_models.py)
 report/                final project report
 presentation/          slides and video script
 docs/                  images used in this README

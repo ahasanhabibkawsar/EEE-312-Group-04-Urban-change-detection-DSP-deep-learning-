@@ -15,6 +15,10 @@ Interactive demonstration of the trained Siamese U-Net.
   and polygon approximation (cv2.approxPolyDP) for crisp footprints.
 * If a ground-truth mask is loaded, F1 / IoU / Precision / Recall are
   computed live for the mask shown on screen.
+* Model selector: v2 (RGB + Canny, final), v2 RGB-only, the old v1
+  prototype (256 px) and two v1 + v2 ensembles (average / union).
+  "Compare all models" shows every model on the same pair side by side.
+* The overlay can be drawn on the Before (default, as in v1) or After image.
 """
 
 import os
@@ -32,7 +36,7 @@ from matplotlib.figure import Figure
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QSlider, QFileDialog, QGroupBox, QGridLayout,
-    QStatusBar, QMessageBox, QCheckBox, QComboBox,
+    QStatusBar, QMessageBox, QCheckBox, QComboBox, QDialog,
 )
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QImage, QPixmap
@@ -42,9 +46,9 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 import config  # noqa: E402
 from inference.predictor import (  # noqa: E402
-    get_device, load_model, run_inference, postprocess_mask,
-    center_crop, rescale,
+    get_device, load_image, match_sizes, postprocess_mask, center_crop,
 )
+from inference.multi_model import ModelZoo, METHODS, NEEDS, default_thresholds  # noqa: E402
 from training.metrics import metrics_from_counts  # noqa: E402
 
 
@@ -54,7 +58,10 @@ SCALE_OPTIONS = [
     ("Source 1.0 m/px  → upsample ×2", 2.0),
     ("Source 0.3 m/px  → downsample ×0.6", 0.6),
     ("Source 0.25 m/px → downsample ×0.5", 0.5),
+    ("Source 2.0 m/px  → upsample ×4", 4.0),
 ]
+DEFAULT_METHOD = "v2"
+OVERLAY_OPTIONS = ["Before (T1)", "After (T2)"]
 
 
 # =========================================================
@@ -62,45 +69,61 @@ SCALE_OPTIONS = [
 # =========================================================
 
 class ModelLoader(QThread):
-    loaded = pyqtSignal(object)
+    """Loads the networks a method needs (once; later calls are instant)."""
+
+    loaded = pyqtSignal(str)
     error = pyqtSignal(str)
 
-    def __init__(self, device):
+    def __init__(self, zoo, method):
         super().__init__()
-        self.device = device
+        self.zoo = zoo
+        self.method = method
 
     def run(self):
         try:
-            self.loaded.emit(load_model(self.device, config.CHECKPOINT_PATH))
+            self.zoo.load_for(self.method)
+            self.loaded.emit(self.method)
         except Exception as exc:  # shown in a dialog
             self.error.emit(str(exc))
 
 
+def load_pair(before_path, after_path, crop):
+    before, after = match_sizes(load_image(before_path), load_image(after_path))
+    if crop:
+        before, after = center_crop(before, CROP_SIZE), center_crop(after, CROP_SIZE)
+    return before, after
+
+
 class InferenceWorker(QThread):
+    """Runs one method (or all methods for the comparison view)."""
+
     finished = pyqtSignal(dict)
     error = pyqtSignal(str)
 
-    def __init__(self, model, before_path, after_path, device, crop, tta, scale):
+    def __init__(self, zoo, methods, before_path, after_path, crop, tta, scale, cache):
         super().__init__()
-        self.model = model
+        self.zoo = zoo
+        self.methods = methods
         self.before_path = before_path
         self.after_path = after_path
-        self.device = device
         self.crop = crop
         self.tta = tta
         self.scale = scale
+        self.cache = cache
 
     def run(self):
         try:
-            result = run_inference(
-                self.model, self.before_path, self.after_path, self.device,
-                tta=self.tta,
-                crop_size=CROP_SIZE if self.crop else None,
-                scale=self.scale,
-            )
-            result["before"] = result["before"].astype(np.float32) / 255.0
-            result["after"] = result["after"].astype(np.float32) / 255.0
-            self.finished.emit(result)
+            before, after = load_pair(self.before_path, self.after_path, self.crop)
+            probs = {}
+            for method in self.methods:
+                self.zoo.load_for(method)
+                probs[method] = self.zoo.predict(method, before, after, tta=self.tta,
+                                                 scale=self.scale, cache=self.cache)
+            self.finished.emit({
+                "before": before.astype(np.float32) / 255.0,
+                "after": after.astype(np.float32) / 255.0,
+                "probs": probs,
+            })
         except Exception as exc:
             self.error.emit(str(exc))
 
@@ -147,8 +170,13 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(1250, 850)
 
         self.device = get_device()
-        self.model = None
+        self.zoo = ModelZoo(self.device)
+        self.thresholds = default_thresholds()
+        self.method = DEFAULT_METHOD
+        self.pred_cache = {}
+        self.cache_key = None
         self.worker = None
+        self.compare_dialogs = []
 
         self.before_path = None
         self.after_path = None
@@ -159,18 +187,12 @@ class MainWindow(QMainWindow):
         self.probability = None
         self.gt_mask = None
 
-        self.validation_threshold = config.load_best_threshold()
+        self.validation_threshold = self.thresholds[self.method]
         self.current_threshold = self.validation_threshold
 
         self.setup_ui()
         self.apply_dark_style()
-
-        self.status.showMessage(f"Loading model on {self.device} ...")
-        self.btn_analyze.setEnabled(False)
-        self.loader = ModelLoader(self.device)
-        self.loader.loaded.connect(self.on_model_loaded)
-        self.loader.error.connect(self.on_model_error)
-        self.loader.start()
+        self.start_model_loading(self.method)
 
     # -----------------------------------------------------
     # UI
@@ -212,6 +234,28 @@ class MainWindow(QMainWindow):
         option_row.addStretch()
         main_layout.addLayout(option_row)
 
+        # Row 2b: model and overlay
+        model_row = QHBoxLayout()
+        model_row.addWidget(QLabel("Model:"))
+        self.model_combo = QComboBox()
+        self.available_methods = self.zoo.available()
+        for key in self.available_methods:
+            self.model_combo.addItem(METHODS[key], key)
+        if DEFAULT_METHOD in self.available_methods:
+            self.model_combo.setCurrentIndex(self.available_methods.index(DEFAULT_METHOD))
+        elif self.available_methods:
+            self.method = self.available_methods[0]
+        self.model_combo.currentIndexChanged.connect(self.on_method_changed)
+        model_row.addWidget(self.model_combo)
+        model_row.addSpacing(20)
+        model_row.addWidget(QLabel("Overlay on:"))
+        self.overlay_combo = QComboBox()
+        self.overlay_combo.addItems(OVERLAY_OPTIONS)
+        self.overlay_combo.currentIndexChanged.connect(self.update_binary_and_overlay)
+        model_row.addWidget(self.overlay_combo)
+        model_row.addStretch()
+        main_layout.addLayout(model_row)
+
         # Row 3: actions
         action_row = QHBoxLayout()
         self.btn_analyze = QPushButton("Run Inference")
@@ -220,10 +264,12 @@ class MainWindow(QMainWindow):
         self.btn_auto_thresh.clicked.connect(self.auto_threshold)
         self.btn_val_thresh = QPushButton(f"Validation Threshold ({self.validation_threshold:.2f})")
         self.btn_val_thresh.clicked.connect(lambda: self.set_threshold(self.validation_threshold))
+        self.btn_compare = QPushButton("Compare all models")
+        self.btn_compare.clicked.connect(self.compare_all)
         self.btn_save = QPushButton("Save View")
         self.btn_save.clicked.connect(self.save_view)
         self.btn_save.setEnabled(False)
-        for button in (self.btn_analyze, self.btn_auto_thresh, self.btn_val_thresh):
+        for button in (self.btn_analyze, self.btn_compare, self.btn_auto_thresh, self.btn_val_thresh):
             action_row.addWidget(button)
         action_row.addStretch()
         action_row.addWidget(self.btn_save)
@@ -311,15 +357,41 @@ class MainWindow(QMainWindow):
     # Model loading
     # -----------------------------------------------------
 
-    def on_model_loaded(self, model):
-        self.model = model
+    def start_model_loading(self, method):
+        if not self.available_methods:
+            self.status.showMessage("No checkpoint found. See README: put best_model.pth in checkpoints/.")
+            return
+        self.btn_analyze.setEnabled(False)
+        self.btn_compare.setEnabled(False)
+        self.status.showMessage(f"Loading {METHODS[method]} on {self.device} ...")
+        self.loader = ModelLoader(self.zoo, method)
+        self.loader.loaded.connect(self.on_model_loaded)
+        self.loader.error.connect(self.on_model_error)
+        self.loader.start()
+
+    def on_model_loaded(self, method):
         self.btn_analyze.setEnabled(True)
-        channels = "RGB + Canny" if model.in_channels == 4 else "RGB only"
-        self.status.showMessage(f"Model ready on {self.device} ({channels}). Load Before and After images.")
+        self.btn_compare.setEnabled(True)
+        self.status.showMessage(f"{METHODS[method]} ready on {self.device}. Load Before and After images.")
+        if self.probability is not None:
+            self.try_inference()
 
     def on_model_error(self, message):
+        self.btn_analyze.setEnabled(True)
+        self.btn_compare.setEnabled(True)
         self.status.showMessage("Model could not be loaded.")
         QMessageBox.critical(self, "Model Error", message)
+
+    def on_method_changed(self, index):
+        self.method = self.model_combo.itemData(index)
+        self.validation_threshold = self.thresholds[self.method]
+        self.btn_val_thresh.setText(f"Validation Threshold ({self.validation_threshold:.2f})")
+        self.set_threshold(self.validation_threshold)
+        if all(n in self.zoo.models for n in NEEDS[self.method]):
+            if self.probability is not None:
+                self.try_inference()
+        else:
+            self.start_model_loading(self.method)
 
     # -----------------------------------------------------
     # File loading
@@ -365,7 +437,6 @@ class MainWindow(QMainWindow):
 
         if self.crop_checkbox.isChecked():
             mask = center_crop(mask, CROP_SIZE)
-        mask = rescale(mask, SCALE_OPTIONS[self.scale_combo.currentIndex()][1], is_mask=True)
 
         if self.probability is not None and mask.shape != self.probability.shape:
             h, w = self.probability.shape
@@ -377,48 +448,120 @@ class MainWindow(QMainWindow):
     # Inference
     # -----------------------------------------------------
 
-    def try_inference(self):
-        if self.model is None:
-            QMessageBox.warning(self, "Please wait", "The model is still loading.")
-            return
+    def _options(self):
+        crop = self.crop_checkbox.isChecked()
+        tta = self.tta_checkbox.isChecked()
+        scale = SCALE_OPTIONS[self.scale_combo.currentIndex()][1]
+        key = (self.before_path, self.after_path, crop, tta, scale)
+        if key != self.cache_key:              # new images / options -> fresh cache
+            self.cache_key, self.pred_cache = key, {}
+        return crop, tta, scale
+
+    def _start_worker(self, methods, on_done, message):
         if not self.before_path or not self.after_path:
             QMessageBox.warning(self, "Error", "Please load both Before and After images.")
             return
-
-        self.btn_analyze.setEnabled(False)
-        tta = self.tta_checkbox.isChecked()
-        self.status.showMessage("Running inference" + (" with TTA" if tta else "") + " ...")
-
-        self.worker = InferenceWorker(
-            self.model, self.before_path, self.after_path, self.device,
-            crop=self.crop_checkbox.isChecked(),
-            tta=tta,
-            scale=SCALE_OPTIONS[self.scale_combo.currentIndex()][1],
-        )
-        self.worker.finished.connect(self.on_inference_done)
+        crop, tta, scale = self._options()
+        for widget in (self.btn_analyze, self.btn_compare, self.model_combo):
+            widget.setEnabled(False)
+        self.status.showMessage(message + (" with TTA" if tta else "") + " ...")
+        self.worker = InferenceWorker(self.zoo, methods, self.before_path, self.after_path,
+                                      crop, tta, scale, self.pred_cache)
+        self.worker.finished.connect(on_done)
         self.worker.error.connect(self.on_inference_error)
         self.worker.start()
+
+    def _enable(self):
+        for widget in (self.btn_analyze, self.btn_compare, self.model_combo):
+            widget.setEnabled(True)
+
+    def try_inference(self):
+        self._start_worker([self.method], self.on_inference_done, f"Running {METHODS[self.method]}")
 
     def on_inference_done(self, result):
         self.before_img = result["before"]
         self.after_img = result["after"]
-        self.probability = result["probability"]
+        self.probability = result["probs"][self.method]
 
         self.prepare_gt()
         self.display_image_on_label(self.label_before, self.before_img)
         self.display_image_on_label(self.label_after, self.after_img)
         self.display_gt()
         self.canvas_prob.plot_image(self.probability, cmap="viridis", vmin=0, vmax=1,
-                                    title="Change probability", colorbar=True)
+                                    title=f"Change probability – {self.method}", colorbar=True)
         self.update_binary_and_overlay()
 
         self.btn_save.setEnabled(True)
-        self.btn_analyze.setEnabled(True)
+        self._enable()
         h, w = self.probability.shape
-        self.status.showMessage(f"Inference complete ({w}×{h} px).")
+        self.status.showMessage(f"{METHODS[self.method]}: inference complete ({w}×{h} px).")
+
+    # -----------------------------------------------------
+    # Compare all models
+    # -----------------------------------------------------
+
+    def compare_all(self):
+        self._start_worker(self.available_methods, self.on_compare_done, "Running all models")
+
+    def on_compare_done(self, result):
+        self._enable()
+        self.before_img, self.after_img = result["before"], result["after"]
+        self.prepare_gt()
+        probs = result["probs"]
+        n = len(probs)
+        fig = Figure(figsize=(3.0 * (n + 2), 6.4), dpi=90)
+        fig.patch.set_facecolor("#2b2b2b")
+        base = self.before_img if self.overlay_combo.currentIndex() == 0 else self.after_img
+
+        def show(ax, img, title, sub="", cmap=None):
+            ax.imshow(img, cmap=cmap, vmin=0, vmax=1)
+            ax.set_title(title, color="white", fontsize=9)
+            ax.set_xlabel(sub, color="#8ab4f8", fontsize=9)
+            ax.set_xticks([]); ax.set_yticks([])
+
+        show(fig.add_subplot(2, n + 2, 1), self.before_img, "Before (T1)")
+        show(fig.add_subplot(2, n + 2, 2), self.after_img, "After (T2)")
+        gt_ax = fig.add_subplot(2, n + 2, n + 3)
+        if self.gt_mask is not None:
+            show(gt_ax, self.gt_mask, "Ground truth", f"{100 * self.gt_mask.mean():.2f} % changed", cmap="gray")
+        else:
+            gt_ax.axis("off")
+        for i, (method, prob) in enumerate(probs.items()):
+            t = self.thresholds[method]
+            mask = (prob >= t).astype(np.float32)
+            if self.post_checkbox.isChecked():
+                mask = postprocess_mask(mask, min_area=20, open_kernel=3, polygonize=True)
+            sub = f"{100 * mask.mean():.2f} % changed"
+            if self.gt_mask is not None and self.gt_mask.shape == mask.shape:
+                pred, gt = mask > 0.5, self.gt_mask > 0.5
+                tp = np.logical_and(pred, gt).sum(); fp = np.logical_and(pred, ~gt).sum(); fn = np.logical_and(~pred, gt).sum()
+                sub = f"F1 {2 * tp / max(2 * tp + fp + fn, 1):.3f} · " + sub
+            show(fig.add_subplot(2, n + 2, i + 3), prob, METHODS[method].split(" (")[0].replace("–", "\n"), f"p (t = {t:.2f})",
+                 cmap="viridis")
+            show(fig.add_subplot(2, n + 2, n + 2 + i + 3), self.make_overlay(mask, base), "overlay", sub)
+        fig.tight_layout()
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Model comparison (red = detected change)")
+        layout = QVBoxLayout(dialog)
+        canvas = FigureCanvas(fig)
+        layout.addWidget(canvas)
+        save = QPushButton("Save comparison")
+        save.clicked.connect(lambda: self._save_figure(fig, "model_comparison.png"))
+        layout.addWidget(save)
+        dialog.resize(min(1800, 270 * (n + 2)), 640)
+        dialog.show()
+        self.compare_dialogs.append(dialog)
+        self.status.showMessage("Comparison ready (thresholds: validation-selected per model).")
+
+    def _save_figure(self, fig, default):
+        path, _ = QFileDialog.getSaveFileName(self, "Save", default, "PNG (*.png)")
+        if path:
+            fig.savefig(path, dpi=150, facecolor=fig.get_facecolor(), bbox_inches="tight")
+            self.status.showMessage(f"Saved to {path}")
 
     def on_inference_error(self, message):
-        self.btn_analyze.setEnabled(True)
+        self._enable()
         self.status.showMessage("Error: " + message)
         QMessageBox.critical(self, "Inference Error", message)
 
@@ -477,17 +620,19 @@ class MainWindow(QMainWindow):
             binary = postprocess_mask(binary, min_area=20, open_kernel=3, polygonize=True)
         return binary
 
-    def make_overlay(self, mask):
-        """Predicted change drawn on the AFTER image (red fill + outline)."""
+    def make_overlay(self, mask, base=None):
+        """Predicted change as a solid red fill + outline (v1 style)."""
 
-        overlay = self.after_img.copy()
+        if base is None:
+            base = self.before_img if self.overlay_combo.currentIndex() == 0 else self.after_img
+        overlay = base.copy()
         changed = mask > 0.5
-        overlay[changed] = 0.55 * overlay[changed] + 0.45 * np.array([1.0, 0.0, 0.0])
+        overlay[changed] = 0.35 * overlay[changed] + 0.65 * np.array([1.0, 0.0, 0.0])
 
         contours, _ = cv2.findContours(changed.astype(np.uint8), cv2.RETR_EXTERNAL,
                                        cv2.CHAIN_APPROX_SIMPLE)
         overlay_u8 = np.ascontiguousarray((overlay * 255).astype(np.uint8))
-        cv2.drawContours(overlay_u8, contours, -1, (255, 255, 0), 1)
+        cv2.drawContours(overlay_u8, contours, -1, (255, 0, 0), 1)
         return overlay_u8.astype(np.float32) / 255.0
 
     def update_binary_and_overlay(self):
@@ -497,7 +642,8 @@ class MainWindow(QMainWindow):
         mask = self.get_display_mask()
         t = self.current_threshold
         self.canvas_mask.plot_image(mask, cmap="gray", vmin=0, vmax=1, title=f"Change mask (t = {t:.2f})")
-        self.canvas_overlay.plot_image(self.make_overlay(mask), title="Detected change on After image")
+        where = "Before" if self.overlay_combo.currentIndex() == 0 else "After"
+        self.canvas_overlay.plot_image(self.make_overlay(mask), title=f"Detected change on {where} image")
         self.update_metrics(mask)
 
     def update_metrics(self, mask):
@@ -547,7 +693,8 @@ class MainWindow(QMainWindow):
             axes[2].imshow(self.gt_mask, cmap="gray", vmin=0, vmax=1); axes[2].set_title("Ground truth")
         else:
             axes[2].text(0.5, 0.5, "No ground truth", ha="center", va="center")
-        axes[3].imshow(self.probability, cmap="viridis", vmin=0, vmax=1); axes[3].set_title("Probability")
+        axes[3].imshow(self.probability, cmap="viridis", vmin=0, vmax=1)
+        axes[3].set_title(f"Probability ({METHODS[self.method]})", fontsize=9)
         axes[4].imshow(mask, cmap="gray", vmin=0, vmax=1)
         axes[4].set_title(f"Change mask (t = {self.current_threshold:.2f})")
         axes[5].imshow(self.make_overlay(mask)); axes[5].set_title("Overlay")
