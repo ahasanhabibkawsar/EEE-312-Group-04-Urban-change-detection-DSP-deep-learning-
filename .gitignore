@@ -1,0 +1,41 @@
+# Python / OS
+__pycache__/
+*.pyc
+.venv/
+.DS_Store
+
+# Dataset (download separately – see README)
+data/
+LEVIR CD/
+
+# Model weights (upload to GitHub Releases instead)
+*.pth
+checkpoints/ablation_rgb_only/
+
+# Large or outdated (v1) generated outputs
+loss_ablation_results/
+full_inference_results/
+error_analysis/
+error_type_analysis/
+inference_results/
+evaluation_results/*.png.png
+evaluation_results/val_tuning/
+gui/*/
+gui/*.png
+*.pdf
+
+# v1 analysis outputs (re-run with the v2 model before publishing)
+spatial_analysis/
+change_size_analysis/
+threshold_analysis/
+threshold_analysis_results/
+evaluation_report/
+
+# Office lock files
+~$*
+
+# Superseded first draft of the slides
+presentation/Group04_EEE312_Urban_Change_Detection.pptx
+
+# Personal notes (not part of the deliverables)
+presentation/Viva_Prep_*.docx

@@ -1,0 +1,28 @@
+{
+    "split": "test",
+    "checkpoint": "/Users/ahasanhabibkawsar/Documents/Urban_change_detaction_2/checkpoints/best_model.pth",
+    "input": "rgb+canny",
+    "tta": false,
+    "tile_overlap": 64,
+    "threshold": 0.41,
+    "threshold_source": "validation (best_threshold.json)",
+    "dataset_level": {
+        "accuracy": 0.9907042235136032,
+        "precision": 0.9182586659052366,
+        "recall": 0.897410040418849,
+        "f1": 0.9077146547877861,
+        "iou": 0.8310233756834222,
+        "kappa": 0.9028209434457037,
+        "tp": 6135955,
+        "tn": 126834115,
+        "fp": 546209,
+        "fn": 701449
+    },
+    "per_image_mean": {
+        "precision": 0.8558650532011285,
+        "recall": 0.8260452518474475,
+        "f1": 0.836460367362761,
+        "iou": 0.7649130205147643
+    },
+    "num_images": 128
+}
