@@ -106,7 +106,8 @@ Split: 445 train / 64 validation / 128 test image pairs.
 python app.py
 ```
 
-![GUI](docs/gui_screenshot.png)
+![GUI]<img width="1245" height="876" alt="Screenshot 2026-10-02 at 2 02 12 AM" src="https://github.com/user-attachments/assets/a4700fd3-a2e9-4fbb-87c5-0f3b3f1a1002" />
+
 
 1. **Load Before (T1)** and **Load After (T2)**: any two co-registered RGB images of the same area (PNG / JPG / TIFF).
 2. *(Optional)* **Load Ground Truth**: a binary mask; the metrics panel then shows F1, IoU, precision and recall live.
