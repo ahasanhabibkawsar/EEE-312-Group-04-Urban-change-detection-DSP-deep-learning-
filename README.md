@@ -13,7 +13,8 @@ Detects new (or demolished) buildings between two satellite images of the same p
 | Project report | [`report/Group04_EEE312_Project_Report.docx`](report/Group04_EEE312_Project_Report.docx) |
 | Presentation slides | [`presentation/Group04_EEE312_Final_Presentation.pptx`](presentation/Group04_EEE312_Final_Presentation.pptx) |
 | Video script | [`presentation/VIDEO_SCRIPT.md`](presentation/VIDEO_SCRIPT.md) |
-| Project video (YouTube) | https://youtu.be/T74GCXJAYH4 |
+| Project video (YouTube) | https://youtu.be/-EsIu7B3CKo |
+| Backup (Google Drive: video, slides, report) | [Drive folder](https://drive.google.com/drive/folders/1PidWs84WgeYZyie0v5PsjVR7Y3fWRIB6?usp=sharing) |
 | Trained model | [Releases page](https://github.com/ahasanhabibkawsar/EEE-312-Group-04-Urban-change-detection-DSP-deep-learning-/releases) |
 
 ## Results
