@@ -47,3 +47,6 @@ comparison_results/samples_*/
 # Video recordings (uploaded to YouTube; too large for GitHub)
 *.mov
 *.mp4
+
+# Final report PDF is a deliverable
+!report/*.pdf

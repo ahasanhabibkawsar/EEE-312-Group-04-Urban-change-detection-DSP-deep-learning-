@@ -10,7 +10,7 @@ Detects new (or demolished) buildings between two satellite images of the same p
 
 | Deliverable | Link |
 |---|---|
-| Project report | [`report/Group04_EEE312_Project_Report.docx`](report/Group04_EEE312_Project_Report.docx) |
+| Project report | [PDF](report/Group_04_project_report.pdf) · [Word](report/Group04_EEE_312_project_report.docx) |
 | Presentation slides | [`presentation/Group04_EEE312_Final_Presentation.pptx`](presentation/Group04_EEE312_Final_Presentation.pptx) |
 | Video script | [`presentation/VIDEO_SCRIPT.md`](presentation/VIDEO_SCRIPT.md) |
 | Project video (YouTube) | https://youtu.be/-EsIu7B3CKo |
